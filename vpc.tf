@@ -1,5 +1,5 @@
 resource "aws_vpc" "main" {
-  cidr_block       = var.cidr_block
+  cidr_block       = var.vpc_cidr
   instance_tenancy = "default"
   enable_dns_hostnames = var.enable_dns_hostnames
 
@@ -8,7 +8,7 @@ resource "aws_vpc" "main" {
      var.vpc_tags,
      
      {
-        name = local.resource_name
+        Name = local.resource_name
      }
 
   )
@@ -22,7 +22,7 @@ resource "aws_internet_gateway" "expense" {
     var.common_tags,
     var.igw_tags,
     {
-        name = local.resource_name
+        Name = local.resource_name
     }
   )
 }
@@ -32,7 +32,7 @@ resource "aws_internet_gateway" "expense" {
 ## Public Subnet
 resource "aws_subnet" "public" { # first name is public[0], second name is public[1]
   count = length(var.public_subnet_cidrs)
-  availability_zone = "local.az_names[count.index]"
+  availability_zone = local.az_names[count.index]
   map_public_ip_on_launch = true
   vpc_id     = aws_vpc.main.id
   cidr_block = var.public_subnet_cidrs[count.index]
@@ -50,7 +50,7 @@ resource "aws_subnet" "public" { # first name is public[0], second name is publi
 ## private Subnet
 resource "aws_subnet" "private" { # first name is public[0], second name is public[1]
   count = length(var.private_subnet_cidrs)
-  availability_zone = "local.az_names[count.index]"
+  availability_zone = local.az_names[count.index]
   
   vpc_id     = aws_vpc.main.id
   cidr_block = var.private_subnet_cidrs[count.index]
@@ -68,7 +68,7 @@ resource "aws_subnet" "private" { # first name is public[0], second name is publ
 ## database Subnet
 resource "aws_subnet" "database" { # first name is public[0], second name is public[1]
   count = length(var.database_subnet_cidrs)
-  availability_zone = "local.az_names[count.index]"
+  availability_zone = local.az_names[count.index]
   
   vpc_id     = aws_vpc.main.id
   cidr_block = var.database_subnet_cidrs[count.index]
@@ -82,6 +82,21 @@ resource "aws_subnet" "database" { # first name is public[0], second name is pub
   )
 }
 
+
+# resource "aws_db_subnet_group" "default" {
+#   name = "${local.resource_name}"
+#   subnet_ids = aws_subnet.database[*].id
+
+
+#   tags = merge(
+#     var.common_tags,
+#     var.database_subnet_group_tags,
+#     {
+#         Name = "${local.resource_name}"
+#     }
+#   )
+# }
+
 ##########elastic IP#####
 resource "aws_eip" "nat" {
   domain   = "vpc"
@@ -94,7 +109,7 @@ resource "aws_nat_gateway" "nat" {
 
   tags = merge(
     var.common_tags,
-    var.natgatway_tags,
+    var.nat_gatway_tags,
     {
         Name = "${local.resource_name}"
     }
@@ -115,7 +130,7 @@ resource "aws_route_table" "public" {
 
   tags = merge(
     var.common_tags,
-    var.publicroutetables_tags,
+    var.public_route_tables_tags,
     {
         Name = "${local.resource_name}-public"
     }
@@ -131,7 +146,7 @@ resource "aws_route_table" "private" {
 
   tags = merge(
     var.common_tags,
-    var.privateroutetables_tags,
+    var.private_route_tables_tags,
     {
         Name = "${local.resource_name}-private"
     }
@@ -146,26 +161,26 @@ resource "aws_route_table" "database" {
 
   tags = merge(
     var.common_tags,
-    var.databaseroutetables_tags,
+    var.database_route_tables_tags,
     {
         Name = "${local.resource_name}-database"
     }
   )
 }
 
-resource "aws_route" "public" {
+resource "aws_route" "public_route" {
   route_table_id            = aws_route_table.public.id
   destination_cidr_block    = "0.0.0.0/0"
   gateway_id = aws_internet_gateway.expense.id
 }
 
-resource "aws_route" "private" {
+resource "aws_route" "private_route_nat" {
   route_table_id            = aws_route_table.private.id
   destination_cidr_block    = "0.0.0.0/0"
   nat_gateway_id = aws_nat_gateway.nat.id
 }
 
-resource "aws_route" "database" {
+resource "aws_route" "database_route_nat" {
   route_table_id            = aws_route_table.database.id
   destination_cidr_block    = "0.0.0.0/0"
   nat_gateway_id = aws_nat_gateway.nat.id

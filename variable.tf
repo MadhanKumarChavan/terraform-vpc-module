@@ -1,6 +1,7 @@
 #project name and environment is must that can be given by module user
 variable "project_name" {
     type = string 
+    default = "expense"
 }
 variable "environment" {
     type = string 
@@ -13,10 +14,9 @@ variable "common_tags" {
 }
 
 ####vpc tags######
-variable "cidr_block" {
+variable "vpc_cidr" {
     type = string
     default = "10.0.0.0/16"
-  
 }
 variable "enable_dns_hostnames" {
     type = bool
@@ -77,29 +77,48 @@ variable "database_subnet_cidrs" {
 
 variable "database_subnet_cidr_tags" {
 
+     type = map
+    default = {} 
+}
+variable "database_subnet_group_tags" {
+    type = map
+    default = {}
+}
+
+variable "nat_gatway_tags" {
+
   type = map
     default = {} 
 }
 
-variable "natgatway_tags" {
+variable "public_route_tables_tags" {
 
   type = map
     default = {} 
 }
 
-variable "publicroutetables_tags" {
+variable "private_route_tables_tags" {
 
   type = map
     default = {} 
 }
-
-variable "privateroutetables_tags" {
+variable "database_route_tables_tags" {
 
   type = map
     default = {} 
 }
-variable "databaseroutetables_tags" {
+#### Peering ####
+variable "is_peering_required" {
+  type = bool
+  default = false
+}
 
+variable "acceptor_vpc_id" {
+  type = string
+  default = ""
+}
+
+variable "vpc_peering_tags" {
   type = map
-    default = {} 
+  default = {}
 }
